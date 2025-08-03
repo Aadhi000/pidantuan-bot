@@ -22,14 +22,29 @@ async function claimAward() {
   const page = await browser.newPage();
 
   try {
+    // Use a real browser User-Agent to bypass Cloudflare detection
+    await page.setExtraHTTPHeaders({
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
+    });
+
+    // Visit login page
     await page.goto('https://www.pidantuan.com/member.php?mod=logging&action=login&loginsubmit=yes&lssubmit=yes', { waitUntil: 'domcontentloaded' });
 
+    // ✅ Wait for Cloudflare challenge to complete (max 15s)
+    await page.waitForTimeout(15000);
+
+    // ✅ Wait for login form to appear
+    await page.waitForSelector('input[name="username"]', { timeout: 30000 });
+
+    // Fill in login credentials
     await page.fill('input[name="username"]', PIDANTUAN_USER);
     await page.fill('input[name="password"]', PIDANTUAN_PASS);
 
+    // Submit login
     await page.click('button[type="submit"], input[type="submit"]');
     await page.waitForLoadState('networkidle');
 
+    // Go to award page
     await page.goto('https://www.pidantuan.com/plugin.php?id=are_sign:getaward&typeid=1', { waitUntil: 'networkidle' });
 
     const text = await page.textContent('body');
@@ -54,3 +69,4 @@ bot.onText(/\/claim/, async (msg) => {
 app.get('/', (req, res) => res.send('✅ Playwright Telegram Bot running!'));
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
