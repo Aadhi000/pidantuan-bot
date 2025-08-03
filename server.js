@@ -22,24 +22,37 @@ async function claimAward() {
   const page = await browser.newPage();
 
   try {
+    // 1. Go to login page
     await page.goto('https://www.pidantuan.com/member.php?mod=logging&action=login&loginsubmit=yes&lssubmit=yes', { waitUntil: 'domcontentloaded' });
 
-    // ✅ Wait longer for Cloudflare
-    await page.waitForTimeout(20000);
+    // 2. Wait for Cloudflare challenge (longer)
+    await page.waitForTimeout(30000);
 
-    // ✅ Wait for login form to appear after challenge
-    await page.waitForSelector('input[name="username"]', { timeout: 45000 });
+    // 3. Simulate human behavior to bypass detection
+    await page.mouse.move(100, 200, { steps: 10 });
+    await page.waitForTimeout(2000);
+    await page.mouse.wheel(0, 500);
+    await page.waitForTimeout(2000);
 
-    await page.fill('input[name="username"]', PIDANTUAN_USER);
+    // 4. Check if login form exists
+    const loginSelector = 'input[name="username"]';
+    const found = await page.$(loginSelector);
+
+    if (!found) {
+      throw new Error("Login form not found - Cloudflare likely blocked");
+    }
+
+    // 5. Fill login
+    await page.fill(loginSelector, PIDANTUAN_USER);
     await page.fill('input[name="password"]', PIDANTUAN_PASS);
     await page.click('button[type="submit"], input[type="submit"]');
 
     await page.waitForLoadState('networkidle');
 
+    // 6. Navigate to award page
     await page.goto('https://www.pidantuan.com/plugin.php?id=are_sign:getaward&typeid=1', { waitUntil: 'networkidle' });
 
     const text = await page.textContent('body');
-
     await browser.close();
     return `✅ Award Page Response:\n\n${text.slice(0, 500)}...`;
   } catch (err) {
@@ -47,6 +60,7 @@ async function claimAward() {
     return `❌ Error: ${err.message}`;
   }
 }
+
 
 bot.onText(/\/claim/, async (msg) => {
   const chatId = msg.chat.id;
@@ -57,5 +71,6 @@ bot.onText(/\/claim/, async (msg) => {
 
 app.get('/', (req, res) => res.send('✅ Stealth Playwright Bot running!'));
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 
 
