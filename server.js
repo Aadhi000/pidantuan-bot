@@ -8,9 +8,9 @@ chromium.use(stealth); // ✅ enable stealth
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
-const PIDANTUAN_USER = process.env.PIDANTUAN_USER;
-const PIDANTUAN_PASS = process.env.PIDANTUAN_PASS;
+const TELEGRAM_TOKEN = "8378840441:AAFE1VBpj0lyFWoICKfMpF7crc1B13x5VV0";
+const PIDANTUAN_USER = "aaaaasfhuiutt";
+const PIDANTUAN_PASS = "114912@Aadil";
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
@@ -57,3 +57,4 @@ bot.onText(/\/claim/, async (msg) => {
 
 app.get('/', (req, res) => res.send('✅ Stealth Playwright Bot running!'));
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
