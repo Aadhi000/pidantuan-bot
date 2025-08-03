@@ -1,6 +1,6 @@
 const express = require('express');
 const { chromium } = require('playwright-extra');
-const stealth = require('playwright-extra-plugin-stealth')();
+const stealth = require('./plugins/stealth')();
 const TelegramBot = require('node-telegram-bot-api');
 
 chromium.use(stealth); // ✅ enable stealth
@@ -57,4 +57,5 @@ bot.onText(/\/claim/, async (msg) => {
 
 app.get('/', (req, res) => res.send('✅ Stealth Playwright Bot running!'));
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 
