@@ -1,14 +1,15 @@
 {
   "name": "pidantuan-playwright-bot",
   "version": "1.0.0",
-  "description": "Telegram bot using Playwright (Render ready)",
+  "description": "Telegram bot using Playwright Stealth (Render ready)",
   "main": "server.js",
   "scripts": {
     "postinstall": "playwright install chromium",
     "start": "node server.js"
   },
   "dependencies": {
-    "playwright": "^1.47.0",
+    "playwright-extra": "^4.3.6",
+    "playwright-extra-plugin-stealth": "^2.11.2",
     "express": "^4.18.2",
     "node-telegram-bot-api": "^0.64.0"
   }
