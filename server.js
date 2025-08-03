@@ -1,42 +1,61 @@
-const express = require("express");
-const puppeteer = require("puppeteer");
+require('dotenv').config();
+const express = require('express');
+const { chromium } = require('playwright');
+const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
 
-// Endpoint to fetch award content
-app.get("/award", async (req, res) => {
-  const username = req.query.username || "aaaaasfhuiutt";    // Your username
-  const password = req.query.password || "114912@Aadil";     // Your password
+// 🔹 Load credentials from environment
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const PIDANTUAN_USER = process.env.PIDANTUAN_USER;
+const PIDANTUAN_PASS = process.env.PIDANTUAN_PASS;
+
+const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+
+// 🔹 Playwright automation function
+async function claimAward() {
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  });
+  const page = await browser.newPage();
 
   try {
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-    const page = await browser.newPage();
+    // Go to login
+    await page.goto('https://www.pidantuan.com/member.php?mod=logging&action=login&loginsubmit=yes&lssubmit=yes', { waitUntil: 'domcontentloaded' });
 
-    // Go to login page
-    await page.goto("https://www.pidantuan.com/member.php?mod=logging&action=login", { waitUntil: "networkidle2" });
+    // Fill login form
+    await page.fill('input[name="username"]', PIDANTUAN_USER);
+    await page.fill('input[name="password"]', PIDANTUAN_PASS);
 
-    // Fill login form (adjust selectors if needed)
-    await page.type('input[name="username"]', username);
-    await page.type('input[name="password"]', password);
-    await page.click('button[type="submit"]'); // Adjust if site uses a different submit button
-    await page.waitForNavigation({ waitUntil: "networkidle2" });
+    // Submit login
+    await page.click('button[type="submit"], input[type="submit"]');
+    await page.waitForLoadState('networkidle');
 
-    // Go to award page
-    await page.goto("https://www.pidantuan.com/plugin.php?id=are_sign:getaward&typeid=1", { waitUntil: "networkidle2" });
+    // Visit award page
+    await page.goto('https://www.pidantuan.com/plugin.php?id=are_sign:getaward&typeid=1', { waitUntil: 'networkidle' });
 
-    // Get page content
-    const content = await page.content();
+    // Extract message
+    const text = await page.textContent('body');
 
     await browser.close();
-    res.send({ success: true, data: content });
+    return `✅ Award Page Response:\n\n${text.slice(0, 500)}...`; // limit output
   } catch (err) {
-    res.status(500).send({ success: false, error: err.message });
+    await browser.close();
+    return `❌ Error: ${err.message}`;
   }
+}
+
+// 🔹 Telegram Bot Command
+bot.onText(/\/claim/, async (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, '⏳ Logging in to Pidantuan and claiming award...');
+  const result = await claimAward();
+  bot.sendMessage(chatId, result);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`✅ Puppeteer API running on port ${PORT}`));
+// 🔹 Express for Render health check
+app.get('/', (req, res) => res.send('✅ Playwright + Telegram Bot is running!'));
+
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
